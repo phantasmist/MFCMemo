@@ -1,5 +1,4 @@
 ﻿// MFCMemoDlg.h: 헤더 파일
-//
 
 #pragma once
 
@@ -40,4 +39,10 @@ public:
 	afx_msg void OnMenuExit();
 	afx_msg void OnMenuLower();
 	afx_msg void OnMenuUpper();
+	afx_msg void OnMenuHex();
+	afx_msg void OnMenuOpenf();
+	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
+	afx_msg void OnBnClickedBtnCalltest();
+	afx_msg void OnMenuSaveAs();
 };
