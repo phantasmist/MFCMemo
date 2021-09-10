@@ -183,7 +183,8 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="CDlgTest.h" />
+    <ClInclude Include="CDlg_Font.h" />
+    <ClInclude Include="DlgNew.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="MFCMemo.h" />
     <ClInclude Include="MFCMemoDlg.h" />
@@ -192,7 +193,8 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CDlgTest.cpp" />
+    <ClCompile Include="CDlg_Font.cpp" />
+    <ClCompile Include="DlgNew.cpp" />
     <ClCompile Include="MFCMemo.cpp" />
     <ClCompile Include="MFCMemoDlg.cpp" />
     <ClCompile Include="pch.cpp">

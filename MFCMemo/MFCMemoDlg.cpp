@@ -6,8 +6,9 @@
 #include "framework.h"
 #include "MFCMemo.h"
 #include "MFCMemoDlg.h"
+#include "CDlg_Font.h"
+#include "DlgNew.h"
 #include "afxdialogex.h"
-#include "CDlgTest.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -35,6 +36,7 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	//afx_msg void THISONEISCLICKED();
+	//afx_msg void OnMenuSave();
 };
 
 CAboutDlg::CAboutDlg() : CDialogEx(IDD_ABOUTBOX)
@@ -52,6 +54,7 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
 	//ON_BN_CLICKED(THATBUTTON, &CAboutDlg::OnBnClickedThatbutton)
 	//ON_COMMAND(ID_Menu_OpenF, &CAboutDlg::OnMenuOpenf)
+	//ON_COMMAND(ID_MENU_SAVE, &CAboutDlg::OnMenuSave)
 END_MESSAGE_MAP()
 
 
@@ -61,7 +64,6 @@ END_MESSAGE_MAP()
 
 CMFCMemoDlg::CMFCMemoDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_MFCMEMO_DIALOG, pParent)
-	//, strMemo(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -72,8 +74,6 @@ void CMFCMemoDlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_TB_MEMO1, CMemo1);
 	DDX_Control(pDX, IDC_TB_MEMO2, CMemo2);
-	//DDX_Control(pDX, IDC_RADIO1, CRadio1);
-	//DDX_Control(pDX, IDC_RADIO2, CRadio2);
 }
 
 //여기가 CMFCMemoDlg: 본판 다이얼로그임
@@ -91,6 +91,9 @@ BEGIN_MESSAGE_MAP(CMFCMemoDlg, CDialogEx)
 	ON_WM_ACTIVATE()
 	//ON_BN_CLICKED(IDC_BTN_CALLTEST, &CMFCMemoDlg::OnBnClickedBtnCalltest)
 	ON_COMMAND(ID_MENU_SAVE_AS, &CMFCMemoDlg::OnMenuSaveAs)
+	ON_COMMAND(ID_MENU_SAVE, &CMFCMemoDlg::OnMenuSave)
+	ON_COMMAND(ID_MENU_NEW_WINDOW, &CMFCMemoDlg::OnMenuNewWindow)
+	ON_COMMAND(ID_MENU_FONT, &CMFCMemoDlg::OnMenuFont)
 END_MESSAGE_MAP()
 
 
@@ -127,7 +130,7 @@ BOOL CMFCMemoDlg::OnInitDialog() //이름 주목
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
-	//OnSize(0, 500, 300); //사이즈 초기화 //여기선 창이 로딩되지 않음
+	//OnSize(0, 500, 300); //여기선 창 사이즈 초기화 하면 안됨
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -182,7 +185,7 @@ HCURSOR CMFCMemoDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-//THATBUTTON 눌렀을 때 발생하는 이벤트:
+//여러 string 관련 잡설 + 과거 버튼 구현 요소들
 /*
 void CMFCMemoDlg::OnBnClickedThatbutton()
 {
@@ -260,11 +263,13 @@ void CMFCMemoDlg::OnMenuHex()
 		//CString class 이용
 		tmp.Format("%02X ", (unsigned char)in[i]); //이걸 표시해줘야 한글이 안깨짐
 		out += tmp; //연산자 오버라이딩
-		if (i % 16 == 0) out += "\r\n";
+		if (i % 16 == 15) out += "\r\n"; //첫글자에서 엔터치는거 방지하기
 	}
 	CMemo2.SetWindowTextA(out); //A: ASCII ANSI 관련 있음
 
 }
+
+
 
 // 파일 열기 (Open File)
 void CMFCMemoDlg::OnMenuOpenf()
@@ -290,16 +295,22 @@ void CMFCMemoDlg::OnMenuOpenf()
 
 	if (GetOpenFileName(&ofn) == TRUE)
 	{
-		fp = fopen(fName, "rb"); //r+b || rb 로 열어야 \r이 읽어짐
+		fp = fopen(fName, "r+b"); // b가 있어야 \r이 읽어짐
 		CString cstr; 
 		char* buf = fName;
+
+		//현재파일명과, 파일이 열렸는지 여부 체크
+		fileOpened = TRUE;
+		strcpy(currFileName, fName);
+
 
 		while (fgets(buf, 512, fp) != NULL) //정상적으로 읽었다면
 		{
 			cstr += buf;
 		}
 		CMemo1.SetWindowTextA(cstr);
-		//fclose(fp);
+		CMemo2.SetWindowTextA(cstr);
+		//fclose(fp); //이거 관련해서 강사님에게 질문
 	}
   
 	
@@ -328,17 +339,8 @@ void CMFCMemoDlg::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
 }
 
 
-/*
-void CMFCMemoDlg::OnBnClickedBtnCalltest()
-{
-	
-	//MessageBox("메세지박스\n드\n라\n군");
-	CDlgTest dlg;
-	dlg.DoModal();
-}
-*/
-
-//다른이름으로 저장 메세지
+//다른이름으로 저장
+//TODO .txt가 기본으로 붙도록 설정해야 함
 void CMFCMemoDlg::OnMenuSaveAs()
 {
 	OPENFILENAME ofn;
@@ -354,28 +356,97 @@ void CMFCMemoDlg::OnMenuSaveAs()
 	ofn.lpstrFile[0] = '\0';
 	ofn.nMaxFile = sizeof(fName);
 	ofn.lpstrFilter = "All\0*.*\0Text\0*.TXT\0";
-	ofn.nFilterIndex = 1;
+	ofn.nFilterIndex = 2;
 	ofn.lpstrFileTitle = NULL;
 	ofn.nMaxFileTitle = 0;
 	ofn.lpstrInitialDir = NULL;
 	ofn.Flags = OFN_PATHMUSTEXIST; // | OFN_FILEMUSTEXIST;
+	ofn.lpstrDefExt = ".TXT"; //기본 파일확장자
+
 
 	if (GetSaveFileName(&ofn) == TRUE)
 	{
-		fp = fopen(fName, "wb"); //r+b || rb 로 열어야 \r이 읽어짐
+		fp = fopen(fName, "w+b"); 
 		CString cstr;
-		//char* buf = fName;
+		CMemo2.GetWindowTextA(cstr); // cstr으로 제대로 복사가 됨
 
-		//CMemo2.GetWindowTextA(cstr);
-		const char* out = "TEST   TEST";
-		fputs(out , fp);
-		/*
-		while (fgets(buf, 512, fp) != NULL) //정상적으로 읽었다면
-		{
-			cstr += buf;
-		}
-		*/
+		//현재파일명과, 파일이 열렸는지 여부 체크
+		fileOpened = TRUE;
+		strcpy(currFileName, fName);
+		//파일포인터가 멀쩡하면 파일로 출력
+		if (fp != NULL)
+			fputs((LPCTSTR)cstr, fp);
+
 		CMemo1.SetWindowTextA(cstr);
-		fclose(fp);
+		//fclose(fp);
 	}
+}
+
+
+//그냥 저장 
+// TODO: 가능하면 global 변수 제거.. static 변수를 쓰고싶지도 않다만..
+void CMFCMemoDlg::OnMenuSave()
+{
+	// 현재 파일이 열려있다면 그 파일에 저장
+	if (fileOpened == TRUE)
+	{
+		CString cstr;
+		FILE* fp;
+		fp = fopen(currFileName, "w+b");
+		CMemo2.GetWindowTextA(cstr); // cstr으로 제대로 복사가 됨
+		//파일포인터가 멀쩡하면 파일로 출력
+		if (fp != NULL)
+			fputs((LPCSTR)cstr, fp);
+
+		CMemo1.SetWindowTextA(cstr);
+
+	}
+	//그게 아니라면 SaveAs 호출
+	else
+		CMFCMemoDlg::OnMenuSaveAs();
+}
+
+//New(새 항목)
+void CMFCMemoDlg::OnMenuNewWindow()
+{
+	//저장할거냐 다이얼로그 팝업
+	DlgNew _new_dlg;
+	_new_dlg.DoModal();
+	//취소가 아니면 실행
+	if (_new_dlg.result != -1)
+	{
+		if (_new_dlg.result == 1)
+			CMFCMemoDlg::OnMenuSave();
+		//창 정리
+		fileOpened = FALSE;
+		CMemo1.SetWindowTextA("");
+		CMemo2.SetWindowTextA("");
+	}
+}
+
+
+
+//폰트 조절
+//TODO: 현재 폰트를 다이얼로그 드랍다운 메뉴에 default로 표기
+// 시스템 폰트 목록을 어디서 어떻게 추출할 수 있을까?  EnumFontFamilies 계열 함수로 가능함
+// Bold/Italic 같은것도 설정 가능함 >> 시간 남으면 하자
+void CMFCMemoDlg::OnMenuFont()
+{
+	//모달 다이얼로그 선언/실행
+	CFont* m_pFont = new CFont();
+	CDlg_Font font(fontSize, fontName, (CWnd * )nullptr);
+	font.DoModal();
+	//확인 버튼을 눌렀다면 모달 다이얼로그 반환값 반영
+	if (font.okay == TRUE)
+	{
+		//폰트 포인터 선언		
+		fontSize = atoi((LPCTSTR)(font.ChosenSize)) * 10;
+		fontName = font.ChosenFont;
+		//폰트 포인터 설정
+		m_pFont->CreatePointFont(fontSize, fontName); //CreatePointFont(크기*10, 폰트명);
+		//폰트 변경 반영
+		CMemo1.SetFont(m_pFont);
+		CMemo2.SetFont(m_pFont);
+	}
+	//delete m_pFont; //이거 있으면 폰트 깨짐
 }
